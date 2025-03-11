@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notification Admin Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .admin-panel {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2d3748;
+      margin-top: 0;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #4a5568;
+      font-weight: 500;
+    }
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    textarea {
+      height: 100px;
+      resize: vertical;
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    .send-btn {
+      background: #4f46e5;
+      color: white;
+    }
+    .send-btn:hover {
+      background: #4338ca;
+    }
+    .test-btn {
+      background: #059669;
+      color: white;
+    }
+    .test-btn:hover {
+      background: #047857;
+    }
+    .stats {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+    }
+    .notification-history {
+      margin-top: 20px;
+    }
+    .history-item {
+      padding: 15px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .history-item:last-child {
+      border-bottom: none;
+    }
+    .success-message {
+      background: #dcfce7;
+      color: #166534;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+      display: none;
+    }
+    .scheduled-notifications {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+    }
+    .schedule-group {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f1f5f9;
+      border-radius: 6px;
+    }
+    .schedule-toggle {
+      margin-bottom: 15px;
+    }
+    .scheduled-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: white;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .cancel-btn {
+      background: #ef4444;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .cancel-btn:hover {
+      background: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-panel">
+    <h1>Notification Admin Panel</h1>
+    
+    <div class="form-group">
+      <label for="notificationType">Notification Type</label>
+      <select id="notificationType">
+        <option value="update">Resource Update</option>
+        <option value="new">New Resource</option>
+        <option value="event">Event Announcement</option>
+        <option value="custom">Custom Message</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="notificationTitle">Title</label>
+      <input type="text" id="notificationTitle" placeholder="Enter notification title">
+    </div>
+
+    <div class="form-group">
+      <label for="notificationMessage">Message</label>
+      <textarea id="notificationMessage" placeholder="Enter your notification message"></textarea>
+    </div>
+
+    <div class="schedule-group">
+      <div class="schedule-toggle">
+        <input type="checkbox" id="scheduleToggle">
+        <label for="scheduleToggle">Schedule for later</label>
+      </div>
+      <div id="scheduleOptions" style="display: none;">
+        <div class="form-group">
+          <label for="scheduleDateTime">Schedule Date & Time</label>
+          <input type="datetime-local" id="scheduleDateTime">
+        </div>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button class="send-btn" onclick="sendNotification(false)">Send to All Users</button>
+      <button class="test-btn" onclick="sendNotification(true)">Test Notification</button>
+    </div>
+
+    <div id="successMessage" class="success-message">
+      Notification sent successfully!
+    </div>
+
+    <div class="stats">
+      <h3>Statistics</h3>
+      <p>Active Subscribers: <span id="subscriberCount">0</span></p>
+      <p>Notifications Sent Today: <span id="notificationCount">0</span></p>
+    </div>
+
+    <div class="scheduled-notifications">
+      <h3>Scheduled Notifications</h3>
+      <div id="scheduledList"></div>
+    </div>
+
+    <div class="notification-history">
+      <h3>Recent Notifications</h3>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <script>
+    // Check authentication
+    if (!localStorage.getItem('adminToken')) {
+      window.location.href = '/login.html';
+    }
+
+    let notificationCount = 0;
+    const history = [];
+
+    // Toggle schedule options
+    document.getElementById('scheduleToggle').addEventListener('change', function(e) {
+      document.getElementById('scheduleOptions').style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    async function sendNotification(isTest) {
+      const type = document.getElementById('notificationType').value;
+      const title = document.getElementById('notificationTitle').value;
+      const message = document.getElementById('notificationMessage').value;
+      const scheduleToggle = document.getElementById('scheduleToggle');
+      const scheduleDateTime = document.getElementById('scheduleDateTime');
+
+      if (!title || !message) {
+        alert('Please fill in both title and message fields');
+        return;
+      }
+
+      const notification = {
+        type,
+        title,
+        message,
+        timestamp: new Date().toISOString()
+      };
+
+      // Add schedule time if enabled
+      if (scheduleToggle.checked && scheduleDateTime.value) {
+        notification.schedule = scheduleDateTime.value;
+      }
+
+      try {
+        const response = await fetch('http://localhost:3000/send-notification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          },
+          body: JSON.stringify(notification)
+        });
+
+        if (response.ok) {
+          const successMsg = document.getElementById('successMessage');
+          successMsg.textContent = notification.schedule ? 
+            'Notification scheduled successfully!' : 
+            'Notification sent successfully!';
+          successMsg.style.display = 'block';
+          setTimeout(() => successMsg.style.display = 'none', 3000);
+
+          if (!isTest) {
+            notificationCount++;
+            document.getElementById('notificationCount').textContent = notificationCount;
+            addToHistory(notification);
+          }
+
+          // Refresh scheduled notifications
+          if (notification.schedule) {
+            loadScheduledNotifications();
+          }
+        } else if (response.status === 401) {
+          localStorage.removeItem('adminToken');
+          window.location.href = '/login.html';
+        }
+      } catch (error) {
+        console.error('Error sending notification:', error);
+        alert('Failed to send notification. Please try again.');
+      }
+    }
+
+    async function loadScheduledNotifications() {
+      try {
+        const response = await fetch('http://localhost:3000/scheduled-notifications', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          }
+        });
+
+        if (response.ok) {
+          const notifications = await response.json();
+          const scheduledList = document.getElementById('scheduledList');
+          
+          scheduledList.innerHTML = notifications.map(item => `
+            <div class="scheduled-item">
+              <div>
+                <strong>${item.payload.title}</strong><br>
+                <small>Scheduled for: ${new Date(item.scheduledTime).toLocaleString()}</small>
+              </div>
+              <button class="cancel-btn" onclick="cancelScheduledNotification('${item.id}')">
+                Cancel
+              </button>
+            </div>
+          `).join('') || '<p>No scheduled notifications</p>';
+        }
+      } catch (error) {
+        console.error('Error loading scheduled notifications:', error);
+      }
+    }
+
+    async function cancelScheduledNotification(id) {
+      try {
+        const response = await fetch(`http://localhost:3000/scheduled-notifications/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          }
+        });
+
+        if (response.ok) {
+          loadScheduledNotifications();
+        }
+      } catch (error) {
+        console.error('Error canceling notification:', error);
+        alert('Failed to cancel notification');
+      }
+    }
+
+    function addToHistory(notification) {
+      history.unshift(notification);
+      if (history.length > 5) history.pop();
+      
+      const historyList = document.getElementById('historyList');
+      historyList.innerHTML = history.map(item => `
+        <div class="history-item">
+          <div>
+            <strong>${item.title}</strong><br>
+            <small>${new Date(item.timestamp).toLocaleString()}</small>
+          </div>
+          <div>${item.type}</div>
+        </div>
+      `).join('');
+    }
+
+    // Update subscriber count periodically
+    async function updateSubscriberCount() {
+      try {
+        const response = await fetch('http://localhost:3000/subscriber-count', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById('subscriberCount').textContent = data.count;
+        } else if (response.status === 401) {
+          localStorage.removeItem('adminToken');
+          window.location.href = '/login.html';
+        }
+      } catch (error) {
+        console.error('Error fetching subscriber count:', error);
+      }
+    }
+
+    // Initialize
+    setInterval(updateSubscriberCount, 30000);
+    updateSubscriberCount();
+    loadScheduledNotifications();
+    setInterval(loadScheduledNotifications, 60000);
+  </script>
+</body>
+</html>

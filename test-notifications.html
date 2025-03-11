@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Notifications</title>
+</head>
+<body>
+    <h1>Test Notifications</h1>
+    <button onclick="requestPermission()">Enable Notifications</button>
+    <button onclick="sendTestNotification()">Send Test Notification</button>
+
+    <script>
+        async function requestPermission() {
+            try {
+                const permission = await Notification.requestPermission();
+                console.log('Permission:', permission);
+                if (permission === 'granted') {
+                    alert('Notifications enabled!');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function sendTestNotification() {
+            if (Notification.permission === 'granted') {
+                const notification = new Notification('Test Notification', {
+                    body: 'This is a test notification',
+                    icon: 'images/profile.jpg'
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    notification.close();
+                };
+            } else {
+                alert('Please enable notifications first');
+            }
+        }
+
+        // Check if notifications are supported
+        if (!('Notification' in window)) {
+            alert('This browser does not support notifications');
+        }
+    </script>
+</body>
+</html>

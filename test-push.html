@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Push Notifications</title>
+</head>
+<body>
+    <h1>Test Push Notifications</h1>
+    <button id="subscribeBtn" disabled>Subscribe to Push</button>
+    <button id="sendBtn" disabled>Send Push Notification</button>
+    <div id="status"></div>
+
+    <script>
+        let swRegistration = null;
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const status = document.getElementById('status');
+
+        function updateStatus(message) {
+            console.log(message);
+            status.textContent = message;
+        }
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            updateStatus('Initializing service worker...');
+            
+            navigator.serviceWorker.register('test-sw.js')
+                .then(function(registration) {
+                    updateStatus('Service Worker registered successfully');
+                    swRegistration = registration;
+                    
+                    // Wait for the service worker to be ready
+                    return navigator.serviceWorker.ready;
+                })
+                .then(function(registration) {
+                    updateStatus('Service Worker is ready');
+                    subscribeBtn.disabled = false;
+                    
+                    // Check if already subscribed
+                    return registration.pushManager.getSubscription();
+                })
+                .then(function(subscription) {
+                    if (subscription) {
+                        updateStatus('Already subscribed to push notifications');
+                        sendBtn.disabled = false;
+                        subscribeBtn.textContent = 'Already Subscribed';
+                        subscribeBtn.disabled = true;
+                    }
+                })
+                .catch(function(error) {
+                    updateStatus('Service Worker Error: ' + error.message);
+                    console.error('Service Worker Error:', error);
+                });
+        } else {
+            updateStatus('Push notifications not supported');
+        }
+
+        async function subscribeToNotifications() {
+            try {
+                updateStatus('Requesting notification permission...');
+                const permission = await Notification.requestPermission();
+                updateStatus('Permission: ' + permission);
+
+                if (permission === 'granted') {
+                    updateStatus('Getting public key...');
+                    const publicKey = await getPublicKey();
+                    
+                    updateStatus('Subscribing to push...');
+                    const subscription = await swRegistration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: publicKey
+                    });
+
+                    updateStatus('Successfully subscribed to push');
+                    console.log('Push Subscription:', subscription);
+
+                    // Send subscription to server
+                    updateStatus('Sending subscription to server...');
+                    const response = await fetch('/subscribe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(subscription)
+                    });
+
+                    if (response.ok) {
+                        updateStatus('Successfully subscribed to notifications!');
+                        sendBtn.disabled = false;
+                        subscribeBtn.disabled = true;
+                    } else {
+                        throw new Error('Failed to send subscription to server');
+                    }
+                }
+            } catch (error) {
+                updateStatus('Error: ' + error.message);
+                console.error('Error:', error);
+            }
+        }
+
+        async function getPublicKey() {
+            const response = await fetch('/vapidPublicKey');
+            const data = await response.json();
+            return urlBase64ToUint8Array(data.publicKey);
+        }
+
+        async function sendNotification() {
+            try {
+                updateStatus('Sending notification...');
+                const response = await fetch('/send', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                console.log('Send notification result:', result);
+                if (result.success) {
+                    updateStatus('Notification sent successfully!');
+                } else {
+                    updateStatus('Error sending notification: ' + result.error);
+                }
+            } catch (error) {
+                updateStatus('Error sending notification: ' + error.message);
+                console.error('Error:', error);
+            }
+        }
+
+        // Function to convert URL-safe base64 to Uint8Array
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        // Add event listeners
+        subscribeBtn.addEventListener('click', subscribeToNotifications);
+        sendBtn.addEventListener('click', sendNotification);
+    </script>
+</body>
+</html>

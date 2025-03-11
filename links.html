@@ -6,8 +6,9 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      margin: 20px auto;
       line-height: 1.4;
+      max-width: 1200px;
     }
     h1 {
       margin-top: 0;
@@ -42,13 +43,14 @@
     .portfolio-banner {
       background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
       padding: 25px;
-      border-radius: 12px;
-      margin-bottom: 30px;
+      border-radius: 12px 12px 0 0;
       border: 1px solid #e9ecef;
+      border-bottom: none;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      width: 100%;
     }
     .profile-section {
       display: flex;
@@ -99,24 +101,60 @@
     .profile-link:hover {
       color: #2c3e50;
     }
-    .ai-badge {
-      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    .notification-btn {
+      background: #4f46e5;
       color: white;
-      padding: 12px 24px;
-      border-radius: 25px;
-      font-size: 1em;
-      display: flex;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.3s ease;
+      display: inline-flex;
       align-items: center;
       gap: 8px;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
     }
-    .ai-badge:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
-      text-decoration: none;
+    .notification-btn:hover {
+      background: #4338ca;
+      transform: translateY(-1px);
+    }
+    .notification-btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .notification-btn.subscribed {
+      background: #059669;
+    }
+    .ai-badge {
+      background: #000;
+      background: linear-gradient(145deg, 
+        rgba(0, 0, 0, 0.95) 0%,
+        rgba(28, 28, 28, 0.95) 100%);
       color: white;
+      padding: 20px;
+      border-radius: 0 0 12px 12px;
+      font-size: 1.15em;
+      width: 100%;
+      line-height: 1.6;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        0 4px 15px rgba(0,0,0,0.1),
+        0 8px 30px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+    }
+    .vision-text {
+      font-style: italic;
+      background: linear-gradient(90deg, #fff 0%, #e0e7ff 50%, #fff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 500;
+      display: block;
+      padding: 0 20px;
     }
     @media (max-width: 768px) {
       .portfolio-banner {
@@ -131,30 +169,118 @@
       .profile-links {
         justify-content: center;
       }
+      .ai-badge::before,
+      .ai-badge::after {
+        display: none;
+      }
     }
   </style>
+  <script>
+    async function initializeNotifications() {
+      if (!('Notification' in window)) {
+        console.log('This browser does not support notifications');
+        return;
+      }
+
+      const notifyBtn = document.getElementById('notifyBtn');
+      
+      if (Notification.permission === 'granted') {
+        console.log('Notifications already granted');
+        notifyBtn.textContent = '✓ Notifications Enabled';
+        notifyBtn.classList.add('subscribed');
+        notifyBtn.disabled = true;
+        await registerServiceWorker();
+      }
+
+      notifyBtn.addEventListener('click', async () => {
+        try {
+          console.log('Requesting notification permission...');
+          const permission = await Notification.requestPermission();
+          console.log('Permission result:', permission);
+          
+          if (permission === 'granted') {
+            await registerServiceWorker();
+          }
+        } catch (error) {
+          console.error('Error enabling notifications:', error);
+        }
+      });
+    }
+
+    async function registerServiceWorker() {
+      try {
+        console.log('Registering service worker...');
+        // Register service worker
+        const registration = await navigator.serviceWorker.register('sw.js');
+        console.log('Service Worker registered:', registration);
+        
+        // Get VAPID public key from server
+        console.log('Fetching VAPID key...');
+        const response = await fetch('http://localhost:3000/vapidPublicKey');
+        const { publicKey } = await response.json();
+        console.log('Got VAPID key');
+
+        // Subscribe to push notifications
+        console.log('Subscribing to push notifications...');
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: publicKey
+        });
+        console.log('Push subscription:', subscription);
+
+        // Send subscription to server
+        console.log('Sending subscription to server...');
+        const subResponse = await fetch('http://localhost:3000/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(subscription)
+        });
+        console.log('Subscription sent to server:', subResponse.ok);
+
+        // Update button state
+        const notifyBtn = document.getElementById('notifyBtn');
+        notifyBtn.textContent = '✓ Notifications Enabled';
+        notifyBtn.classList.add('subscribed');
+        notifyBtn.disabled = true;
+
+      } catch (error) {
+        console.error('Error registering service worker:', error);
+      }
+    }
+
+    // Initialize when the page loads
+    if ('serviceWorker' in navigator) {
+      console.log('Service Worker supported');
+      window.addEventListener('load', initializeNotifications);
+    } else {
+      console.log('Service Worker not supported');
+    }
+  </script>
 </head>
 
 <body>
   <div class="portfolio-banner">
     <div class="profile-section">
-      <img src="images/profile.jpg" alt="Dr. Mohammed Bahja" class="profile-image">
+      <img src="images/profile.jpg?v=2" alt="Dr. Mohammed Bahja" class="profile-image">
       <div class="profile-info">
         <h2 class="profile-name">Dr. Mohammed Bahja</h2>
-        <p class="profile-title">AI Researcher & Technology Innovator</p>
+        <p class="profile-title">Associate Prof. of AI & Chief AI Strategist</p>
         <div class="profile-links">
           <a href="https://linktr.ee/m.bahja" target="_blank" class="profile-link">
-            🔗 Portfolio
+            Portfolio
           </a>
           <a href="#ai-resources" class="profile-link">
-            📚 Resources
+            Resources
           </a>
+          <button id="notifyBtn" class="notification-btn">🔔 Get Updates</button>
         </div>
       </div>
     </div>
-    <a href="#ai-resources" class="ai-badge">
-      🤖 Explore AI Resources Collection
-    </a>
+  </div>
+  <div class="ai-badge">
+    <span class="vision-text">"Bridging academia and industry through AI-innovation for a sustainable future."</span>
   </div>
   <h1 id="ai-resources">AI Resources (Grouped by Theme)</h1>
   <p>This document contains various AI resources, organized into thematic groups. Each entry includes a name, link, and brief description.</p>
