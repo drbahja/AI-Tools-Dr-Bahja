@@ -40,35 +40,123 @@
       text-decoration: underline;
     }
     .portfolio-banner {
-      background-color: #f8f9fa;
-      padding: 15px 20px;
-      border-radius: 8px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 25px;
+      border-radius: 12px;
       margin-bottom: 30px;
       border: 1px solid #e9ecef;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
-    .portfolio-banner a {
-      font-size: 1.2em;
-      color: #2c3e50;
+    .profile-section {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 25px;
     }
-    .portfolio-banner a:hover {
-      color: #1a252f;
+    .profile-image {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #fff;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+    .profile-image:hover {
+      transform: scale(1.05);
+    }
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .profile-name {
+      font-size: 1.6em;
+      font-weight: bold;
+      color: #2c3e50;
+      margin: 0;
+    }
+    .profile-title {
+      color: #4a5568;
+      font-size: 1.1em;
+      margin: 0;
+    }
+    .profile-links {
+      display: flex;
+      gap: 15px;
+      margin-top: 5px;
+    }
+    .profile-link {
+      color: #4a5568;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+    .profile-link:hover {
+      color: #2c3e50;
+    }
+    .ai-badge {
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-size: 1em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+    }
+    .ai-badge:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+      text-decoration: none;
+      color: white;
+    }
+    @media (max-width: 768px) {
+      .portfolio-banner {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 20px;
+      }
+      .profile-section {
+        flex-direction: column;
+      }
+      .profile-links {
+        justify-content: center;
+      }
     }
   </style>
 </head>
 
 <body>
   <div class="portfolio-banner">
-    <a href="https://linktr.ee/m.bahja" target="_blank">
-      📌 Visit Dr. Mohammed Bahja's Portfolio
+    <div class="profile-section">
+      <img src="images/profile.jpg" alt="Dr. Mohammed Bahja" class="profile-image">
+      <div class="profile-info">
+        <h2 class="profile-name">Dr. Mohammed Bahja</h2>
+        <p class="profile-title">AI Researcher & Technology Innovator</p>
+        <div class="profile-links">
+          <a href="https://linktr.ee/m.bahja" target="_blank" class="profile-link">
+            🔗 Portfolio
+          </a>
+          <a href="#ai-resources" class="profile-link">
+            📚 Resources
+          </a>
+        </div>
+      </div>
+    </div>
+    <a href="#ai-resources" class="ai-badge">
+      🤖 Explore AI Resources Collection
     </a>
   </div>
-  <h1>AI Resources (Grouped by Theme)</h1>
+  <h1 id="ai-resources">AI Resources (Grouped by Theme)</h1>
   <p>This document contains various AI resources, organized into thematic groups. Each entry includes a name, link, and brief description.</p>
 
   <!-- 1. AI Prompt Engineering & Best Practices -->
