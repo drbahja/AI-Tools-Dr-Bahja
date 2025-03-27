@@ -174,6 +174,37 @@
         display: none;
       }
     }
+    .search-container {
+      margin: 20px 0;
+      text-align: center;
+    }
+    .search-input {
+      width: 50%;
+      padding: 12px 20px;
+      margin: 8px 0;
+      box-sizing: border-box;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+      background-color: white;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23666" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>');
+      background-position: 10px 50%;
+      background-repeat: no-repeat;
+      padding-left: 40px;
+      transition: all 0.3s ease;
+    }
+    .search-input:focus {
+      border-color: #4f46e5;
+      outline: none;
+      box-shadow: 0 0 5px rgba(79, 70, 229, 0.3);
+    }
+    .no-results {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-style: italic;
+      display: none;
+    }
   </style>
   <script>
     async function initializeNotifications() {
@@ -250,16 +281,60 @@
       }
     }
 
+    function searchResources() {
+      const searchInput = document.getElementById('resourceSearch');
+      const tables = document.getElementsByTagName('table');
+      const noResults = document.getElementById('noResults');
+      let totalVisibleRows = 0;
+      
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        for (let table of tables) {
+          let rows = table.getElementsByTagName('tr');
+          let tableHasVisibleRows = false;
+          
+          // Skip the header row (index 0)
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const cells = row.getElementsByTagName('td');
+            let rowText = '';
+            
+            for (let cell of cells) {
+              rowText += cell.textContent.toLowerCase() + ' ';
+            }
+            
+            if (rowText.includes(searchTerm)) {
+              row.style.display = '';
+              tableHasVisibleRows = true;
+              totalVisibleRows++;
+            } else {
+              row.style.display = 'none';
+            }
+          }
+          
+          // Show/hide the section heading based on whether there are visible rows
+          const sectionHeading = table.previousElementSibling;
+          if (sectionHeading && sectionHeading.tagName === 'H2') {
+            sectionHeading.style.display = tableHasVisibleRows ? '' : 'none';
+          }
+        }
+        
+        // Show/hide no results message
+        noResults.style.display = totalVisibleRows === 0 ? 'block' : 'none';
+      });
+    }
+
     // Initialize when the page loads
     if ('serviceWorker' in navigator) {
       console.log('Service Worker supported');
-      window.addEventListener('load', initializeNotifications);
-    } else {
-      console.log('Service Worker not supported');
+      window.addEventListener('load', function() {
+        initializeNotifications();
+        searchResources();
+      });
     }
   </script>
 </head>
-
 <body>
   <div class="portfolio-banner">
     <div class="profile-section">
@@ -284,6 +359,13 @@
   </div>
   <h1 id="ai-resources">AI Resources (Grouped by Theme)</h1>
   <p>This document contains various AI resources, organized into thematic groups. Each entry includes a name, link, and brief description.</p>
+
+  <div class="search-container">
+    <input type="text" id="resourceSearch" class="search-input" placeholder="Search resources...">
+  </div>
+  <div id="noResults" class="no-results">
+    No matching resources found
+  </div>
 
   <!-- 1. AI Prompt Engineering & Best Practices -->
   <h2>1. AI Prompt Engineering &amp; Best Practices</h2>
@@ -629,6 +711,41 @@
       <td>Rabbitmetrics YouTube (Xi9Ui-9qcPw)</td>
       <td><a href="https://www.youtube.com/watch?v=Xi9Ui-9qcPw">Link</a></td>
       <td>Video from Rabbitmetrics showcasing AI-driven automation or analytics.</td>
+    </tr>
+  </table>
+
+  <!-- 9. AI Learning Resources for Kids -->
+  <h2>9. AI Learning Resources for Kids</h2>
+  <table>
+    <tr>
+      <th style="width:25%">Resource Name</th>
+      <th style="width:35%">Link</th>
+      <th style="width:40%">Description</th>
+    </tr>
+    <tr>
+      <td>Stanford CRAFT</td>
+      <td><a href="https://craft.stanford.edu/" target="_blank">Link</a></td>
+      <td>Stanford's CRAFT (Creative AI Tools) provides educational resources and tools to help kids learn about AI through creative projects and hands-on activities.</td>
+    </tr>
+    <tr>
+      <td>CodeMonkey</td>
+      <td><a href="https://www.codemonkey.com/" target="_blank">Link</a></td>
+      <td>A fun and educational platform that teaches kids coding and computational thinking through engaging games and challenges, including AI-related content.</td>
+    </tr>
+    <tr>
+      <td>Create & Learn</td>
+      <td><a href="https://www.create-learn.us/ai-for-kids" target="_blank">Link</a></td>
+      <td>Specialized AI courses and programs designed specifically for kids, offering hands-on experience with AI concepts and technologies.</td>
+    </tr>
+    <tr>
+      <td>Code.org</td>
+      <td><a href="https://code.org/" target="_blank">Link</a></td>
+      <td>Provides free coding resources and AI-related courses for kids, making computer science and AI education accessible to students of all ages.</td>
+    </tr>
+    <tr>
+      <td>Tynker</td>
+      <td><a href="http://tynker.com/" target="_blank">Link</a></td>
+      <td>A coding platform for kids that includes AI and machine learning projects, helping children understand AI concepts through interactive programming activities.</td>
     </tr>
   </table>
 
