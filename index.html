@@ -144,7 +144,6 @@
       background: #059669;
     }
     .ai-badge {
-      background: #000;
       background: linear-gradient(145deg, 
         rgba(0, 0, 0, 0.95) 0%,
         rgba(28, 28, 28, 0.95) 100%);
@@ -907,5 +906,19 @@
     No matching resources found
   </div>
 
+  <script>
+    window.goatcounter = {
+      no_onload: true, // Prevent auto-sending on script load
+      callback: function(count) { // Add callback to verify tracking
+        console.log('GoatCounter tracked:', count);
+      }
+    };
+  </script>
+  <script data-goatcounter="https://drbahja.goatcounter.com/count" 
+          async 
+          src="https://gc.zgo.at/count.js"
+          onerror="console.error('GoatCounter failed to load')"
+          onload="window.goatcounter.count()">
+  </script>
 </body>
 </html>
